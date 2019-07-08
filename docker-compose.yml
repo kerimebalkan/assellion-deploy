@@ -1,0 +1,45 @@
+version: "3"
+
+services:
+# backend
+    assellion-api:
+        build: ../assellion
+        ports:
+            - 18080:8080
+        environment:
+            DB_HOST: mysql
+            DB_USER: goha
+            DB_PASSWORD: hello
+            DB_NAME: assellion
+            _JAVA_OPTIONS: |
+                -Xms128m -Xmx256m
+                -XX:MaxMetaspaceSize=128m
+                -Xmn128m
+                -agentlib:jdwp=transport=dt_socket,address=5005,suspend=n,server=y
+        links:
+            - assellion-db:mysql
+        depends_on:
+            - assellion-db
+            - consul
+
+# database
+    assellion-db:
+        build: assellion-db
+        environment:
+            - MYSQL_ROOT_PASSWORD=hello
+            - MYSQL_DATABASE=assellion
+            - MYSQL_USER=goha
+            - MYSQL_PASSWORD=hello
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./assellion-db/mysql:/var/lib/mysql
+
+#consul
+    consul:
+        image: consul:0.9.3
+        ports:
+            - "8500:8500"
+            - "8600:8600"
+            - "8400:8400"
+        command: ["agent", "-dev", "-client", "0.0.0.0", "-log-level", "info"]
